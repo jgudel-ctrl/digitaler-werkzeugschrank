@@ -1,3 +1,3 @@
 :HL["/digitaler-werkzeugschrank/_next/static/chunks/8b1cbe279986b38b.css","style"]
-:HL["/digitaler-werkzeugschrank/_next/static/chunks/326ab0fc7d0b9565.css","style"]
-0:{"buildId":"8glzzdMkRZ2O2cSrTQTxQ","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":true},"staleTime":300}
+:HL["/digitaler-werkzeugschrank/_next/static/chunks/f315ac01d89eb945.css","style"]
+0:{"buildId":"t7ofTU_u0bVfZzZhd1rTG","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":true},"staleTime":300}

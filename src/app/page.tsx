@@ -4,18 +4,25 @@ import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Archive, ArrowRight, Check, ChevronDown, CircleAlert, CircleCheck,
+  Archive, ArrowRight, BarChart3, CalendarDays, Check, ChevronDown, CircleAlert, CircleCheck,
   Clock3, Eye, Gauge, History, Home, Info, KeyRound, LogOut, Mail,
   MapPin, Menu, PackageCheck, QrCode, ScanLine, Search, ShieldCheck,
-  Sparkles, ToolCase, UserRound, Wrench, X, XCircle,
+  Sparkles, ToolCase, TrendingDown, TrendingUp, UserRound, WalletCards, Wrench, X, XCircle,
 } from "lucide-react";
+import {
+  Area, AreaChart, Bar, CartesianGrid, Cell, ComposedChart, Legend, Line,
+  Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
+} from "recharts";
 import styles from "./werkzeugschrank.module.css";
+import {
+  AnalysisPeriod, filterServiceHistory, periodLabels, serviceHistory, summarizeServiceHistory,
+} from "./analysis";
 import {
   activeTools, archivedTools, categories, remainingCycles, remainingPercent,
   Tool, tools,
 } from "./tools";
 
-type View = "overview" | "tools" | "archive" | "profile";
+type View = "overview" | "tools" | "analysis" | "archive" | "profile";
 type ScanState = "idle" | "scanning" | "success" | "error";
 
 const statusIcon = (status: Tool["status"]) =>
@@ -200,6 +207,68 @@ function ToolList({ onOpen }: { onOpen: (tool: Tool) => void }) {
   </section>;
 }
 
+const euro = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+
+function AnalysisView() {
+  const [period, setPeriod] = useState<AnalysisPeriod>("year");
+  const [from, setFrom] = useState("2026-01");
+  const [to, setTo] = useState("2026-08");
+  const months = useMemo(() => filterServiceHistory(period, from, to), [period, from, to]);
+  const summary = useMemo(() => summarizeServiceHistory(months), [months]);
+  const year = useMemo(() => summarizeServiceHistory(filterServiceHistory("year")), []);
+  const currentMonth = useMemo(() => summarizeServiceHistory(filterServiceHistory("month")), []);
+  const previousMonths = useMemo(() => {
+    const firstIndex = serviceHistory.findIndex((month) => month.key === months[0]?.key);
+    return serviceHistory.slice(Math.max(0, firstIndex - months.length), firstIndex);
+  }, [months]);
+  const previous = useMemo(() => summarizeServiceHistory(previousMonths), [previousMonths]);
+  const costDelta = previous.totalCost ? Math.round(((summary.totalCost - previous.totalCost) / previous.totalCost) * 100) : 0;
+  const avgTool = Math.round(year.totalCost / tools.length);
+  const avgSharpening = Math.round(year.sharpeningCost / year.sharpenings);
+  const periodTitle = period === "custom" ? `${from.replace("-", ".")}–${to.replace("-", ".")}` : periodLabels[period];
+  const costSplit = [
+    { name: "Schärfen", value: summary.sharpeningCost, color: "#FF6B6D" },
+    { name: "Sonderarbeiten", value: summary.specialCost, color: "#4ECDC4" },
+    { name: "Sonstige", value: summary.otherCost, color: "#868E96" },
+  ];
+  const kpis = [
+    { label: "Schärfkosten August", value: euro.format(currentMonth.sharpeningCost), detail: "aktueller Monat", icon: <Sparkles /> },
+    { label: "Schärfkosten 2026", value: euro.format(year.sharpeningCost), detail: "Januar bis August", icon: <TrendingUp /> },
+    { label: "Sonderarbeitskosten", value: euro.format(year.specialCost), detail: "11 Sonderarbeiten", icon: <Wrench /> },
+    { label: "Werkzeugservice gesamt", value: euro.format(year.totalCost), detail: "reine Dummy-Daten", icon: <WalletCards /> },
+    { label: "Ø Kosten pro Werkzeug", value: euro.format(avgTool), detail: "bei 10 Werkzeugen", icon: <ToolCase /> },
+    { label: "Ø Kosten pro Schärfung", value: euro.format(avgSharpening), detail: "ohne Sonderarbeiten", icon: <Gauge /> },
+  ];
+  return <section className={`${styles.pageSection} ${styles.analysisPage}`}>
+    <div className={styles.analysisHeader}>
+      <div><h1>Analyse</h1><p>Werkzeugnutzung, Serviceereignisse und Kosten im Zeitverlauf</p></div>
+      <span><BarChart3 /></span>
+    </div>
+    <div className={styles.analysisHero}>
+      <div className={styles.analysisHeroCopy}><p>2026 bisher</p><strong>{year.sharpenings}</strong><span>Schärfungen</span></div>
+      <div className={styles.analysisHeroFacts}><div><b>{year.specialWork}</b><span>Sonderarbeiten</span></div><div><b>{euro.format(year.totalCost)}</b><span>Gesamtkosten</span></div><div><b>4</b><span>Werkzeuge neu / ersetzt</span></div></div>
+      <div className={styles.analysisPulse} aria-hidden="true"><BarChart3 /><i /><i /><i /><i /></div>
+    </div>
+    <div className={styles.periodPanel}>
+      <div className={styles.periodHeading}><div><h2>Zeitraum auswählen</h2><p>Alle Diagramme reagieren auf den Filter</p></div><CalendarDays /></div>
+      <div className={styles.periodTabs} role="group" aria-label="Analysezeitraum">{(Object.keys(periodLabels) as AnalysisPeriod[]).map((key) => <button key={key} className={period === key ? styles.periodActive : ""} onClick={() => setPeriod(key)}>{periodLabels[key]}</button>)}</div>
+      <AnimatePresence initial={false}>{period === "custom" && <motion.div className={styles.customPeriod} initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}><label><span>Von</span><input type="month" value={from} min="2025-01" max={to} onChange={(event) => setFrom(event.target.value)} /></label><ArrowRight /><label><span>Bis</span><input type="month" value={to} min={from} max="2026-08" onChange={(event) => setTo(event.target.value)} /></label></motion.div>}</AnimatePresence>
+    </div>
+    <section className={styles.analysisKpis}>{kpis.map((kpi, index) => <motion.article key={kpi.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * .04 }}><span>{kpi.icon}</span><div><small>{kpi.label}</small><strong>{kpi.value}</strong><p>{kpi.detail}</p></div></motion.article>)}</section>
+    <section className={styles.chartFeature}>
+      <div className={styles.chartHeading}><div><h2>Serviceereignisse</h2><p>{periodTitle} · Schärfungen und Sonderarbeiten</p></div><div className={`${styles.comparisonBadge} ${costDelta <= 0 ? styles.comparisonGood : ""}`}>{costDelta <= 0 ? <TrendingDown /> : <TrendingUp />}<span><b>{Math.abs(costDelta)} %</b> Kosten zum Vorzeitraum</span></div></div>
+      <div className={styles.mainChart} role="img" aria-label="Diagramm der Schärfungen und Sonderarbeiten im gewählten Zeitraum"><ResponsiveContainer width="100%" height="100%"><ComposedChart data={months} margin={{ top: 12, right: 2, left: -28, bottom: 0 }}><CartesianGrid stroke="#EAECEF" vertical={false} /><XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "#7A828E", fontSize: 11 }} /><YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: "#7A828E", fontSize: 10 }} /><Tooltip contentStyle={{ border: 0, borderRadius: 12, boxShadow: "0 14px 36px rgba(30,35,48,.16)", fontSize: 12 }} /><Legend iconType="circle" wrapperStyle={{ fontSize: 11, paddingTop: 12 }} /><Bar dataKey="sharpenings" name="Schärfungen" fill="#FF6B6D" radius={[6, 6, 2, 2]} maxBarSize={36} /><Line dataKey="specialWork" name="Sonderarbeiten" type="monotone" stroke="#232734" strokeWidth={3} dot={{ fill: "#4ECDC4", stroke: "#232734", strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} /></ComposedChart></ResponsiveContainer></div>
+      <div className={styles.chartSummary}><div><b>{summary.sharpenings}</b><span>Schärfungen</span></div><div><b>{summary.specialWork}</b><span>Sonderarbeiten</span></div><div><b>{summary.replacements}</b><span>neu / ersetzt</span></div><div><b>{summary.exhausted}</b><span>aufgebraucht</span></div></div>
+    </section>
+    <div className={styles.analysisGrid}>
+      <section className={styles.costChartCard}><div className={styles.chartHeading}><div><h2>Kostenentwicklung</h2><p>Monatliche Werkzeugservicekosten</p></div><strong>{euro.format(summary.totalCost)}</strong></div><div className={styles.costChart}><ResponsiveContainer width="100%" height="100%"><AreaChart data={months} margin={{ top: 15, right: 5, left: -18, bottom: 0 }}><defs><linearGradient id="costFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#FF6B6D" stopOpacity={.34} /><stop offset="100%" stopColor="#FF6B6D" stopOpacity={.02} /></linearGradient></defs><CartesianGrid stroke="#EAECEF" vertical={false} /><XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "#7A828E", fontSize: 10 }} /><YAxis tickLine={false} axisLine={false} tick={{ fill: "#7A828E", fontSize: 9 }} /><Tooltip contentStyle={{ border: 0, borderRadius: 12, boxShadow: "0 14px 36px rgba(30,35,48,.16)", fontSize: 12 }} /><Area type="monotone" dataKey={(row) => row.sharpeningCost + row.specialCost + row.otherCost} name="Gesamtkosten" stroke="#FF6B6D" strokeWidth={3} fill="url(#costFill)" /></AreaChart></ResponsiveContainer></div></section>
+      <section className={styles.costSplitCard}><div className={styles.chartHeading}><div><h2>Kostenaufteilung</h2><p>Nach Leistungsart</p></div></div><div className={styles.splitLayout}><div className={styles.pieChart}><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={costSplit} dataKey="value" nameKey="name" innerRadius={52} outerRadius={76} paddingAngle={3} stroke="none" animationDuration={700}>{costSplit.map((entry) => <Cell key={entry.name} fill={entry.color} />)}</Pie><Tooltip contentStyle={{ border: 0, borderRadius: 12, boxShadow: "0 14px 36px rgba(30,35,48,.16)", fontSize: 12 }} /></PieChart></ResponsiveContainer><div><strong>{euro.format(summary.totalCost)}</strong><span>gesamt</span></div></div><div className={styles.costLegend}>{costSplit.map((entry) => <div key={entry.name}><i style={{ background: entry.color }} /><span>{entry.name}</span><b>{euro.format(entry.value)}</b></div>)}</div></div></section>
+    </div>
+    <section className={styles.eventTimeline}><div className={styles.chartHeading}><div><h2>Zeitstrahl</h2><p>Monatliche Ereignisse im Detail</p></div></div><div>{[...months].reverse().map((month) => <article key={month.key}><time>{month.longLabel}</time><span><Sparkles /> <b>{month.sharpenings}</b> Schärfungen</span><span><Wrench /> <b>{month.specialWork}</b> Sonderarbeiten</span><span><ToolCase /> <b>{month.replacements}</b> neu / ersetzt</span>{month.exhausted > 0 && <span className={styles.eventCritical}><Archive /> <b>{month.exhausted}</b> aufgebraucht</span>}</article>)}</div></section>
+    <p className={styles.dummyNotice}><Info /> Alle Werte im Analysebereich sind strukturierte Dummy-Daten für die Präsentation.</p>
+  </section>;
+}
+
 function ArchiveView({ onOpen }: { onOpen: (tool: Tool) => void }) {
   return <section className={styles.pageSection}><div className={styles.pageTitle}><div><h1>Archivierte Werkzeuge</h1><p>{archivedTools.length} Werkzeug mit erreichter Lebensdauer</p></div><span className={styles.archiveTitle}><Archive /></span></div><div className={styles.archiveNotice}><Info /><div><strong>Historie bleibt erhalten</strong><p>Archivierte Werkzeuge sind nicht mehr im aktiven Bestand, ihr vollständiger Werkzeugpass bleibt jedoch einsehbar.</p></div></div><div className={styles.toolGrid}>{archivedTools.map((tool) => <ToolCard key={tool.id} tool={tool} onOpen={onOpen} />)}</div></section>;
 }
@@ -218,14 +287,16 @@ export default function WerkzeugschrankPage() {
   const nav = [
     { id: "overview" as View, label: "Übersicht", icon: <Home /> },
     { id: "tools" as View, label: "Werkzeuge", icon: <ToolCase /> },
+    { id: "analysis" as View, label: "Analyse", icon: <BarChart3 /> },
     { id: "archive" as View, label: "Archiv", icon: <Archive /> },
     { id: "profile" as View, label: "Profil", icon: <UserRound /> },
   ];
+  const mobileNav = nav.filter((item) => item.id !== "profile");
   return <div className={styles.appShell}>
     <header className={styles.topbar}><button className={styles.brand} onClick={() => navigate("overview")}><span><Image src="/digitaler-werkzeugschrank/logo.svg" alt="TMS" width={44} height={44} /></span><div><strong>Digitaler Werkzeugschrank</strong><small>Gudel Werkzeuge</small></div></button><div className={styles.topActions}><button aria-label="Menü"><Menu /></button><button className={styles.account} onClick={() => navigate("profile")}><span>HM</span><div><strong>Holzwerk Muster</strong><small>Kundenportal</small></div></button></div></header>
     <aside className={styles.sidebar}><div className={styles.sideLogo}><Image src="/digitaler-werkzeugschrank/logo.svg" alt="TMS" width={50} height={50} /></div><nav>{nav.map((item) => <button key={item.id} className={view === item.id ? styles.activeNav : ""} onClick={() => navigate(item.id)}>{item.icon}<span>{item.label}</span></button>)}</nav><button className={styles.sideScan} onClick={() => setScanner(true)}><QrCode /><span>Scannen</span></button><button className={styles.sideLogout} onClick={() => setLoggedIn(false)}><LogOut /></button></aside>
-    <main className={styles.main}>{view === "overview" && <Dashboard onNavigate={navigate} onOpen={setDetail} />}{view === "tools" && <ToolList onOpen={setDetail} />}{view === "archive" && <ArchiveView onOpen={setDetail} />}{view === "profile" && <ProfileView onLogout={() => setLoggedIn(false)} />}</main>
-    <nav className={styles.bottomNav}>{nav.slice(0, 2).map((item) => <button key={item.id} className={view === item.id ? styles.activeNav : ""} onClick={() => navigate(item.id)}>{item.icon}<span>{item.label}</span></button>)}<button className={styles.centerScan} onClick={() => setScanner(true)}><span><QrCode /></span><b>Scannen</b></button>{nav.slice(2).map((item) => <button key={item.id} className={view === item.id ? styles.activeNav : ""} onClick={() => navigate(item.id)}>{item.icon}<span>{item.label}</span></button>)}</nav>
+    <main className={styles.main}>{view === "overview" && <Dashboard onNavigate={navigate} onOpen={setDetail} />}{view === "tools" && <ToolList onOpen={setDetail} />}{view === "analysis" && <AnalysisView />}{view === "archive" && <ArchiveView onOpen={setDetail} />}{view === "profile" && <ProfileView onLogout={() => setLoggedIn(false)} />}</main>
+    <nav className={styles.bottomNav}>{mobileNav.slice(0, 2).map((item) => <button key={item.id} className={view === item.id ? styles.activeNav : ""} onClick={() => navigate(item.id)}>{item.icon}<span>{item.label}</span></button>)}<button className={styles.centerScan} onClick={() => setScanner(true)}><span><QrCode /></span><b>Scannen</b></button>{mobileNav.slice(2).map((item) => <button key={item.id} className={view === item.id ? styles.activeNav : ""} onClick={() => navigate(item.id)}>{item.icon}<span>{item.label}</span></button>)}</nav>
     <DetailSheet tool={detail} onClose={() => setDetail(null)} />
     <Scanner open={scanner} onClose={() => setScanner(false)} onOpen={setDetail} />
   </div>;

@@ -1,6 +1,6 @@
 # Digitaler Werkzeugschrank
 
-Öffentlicher, statischer Präsentationsprototyp des TMS-Kundenportals von Gudel Werkzeuge.
+Öffentlicher, statischer Präsentationsprototyp des TMS-Kundenportals von Gudel Werkzeuge – inklusive interaktivem Analyse-Dashboard für Serviceereignisse und klar gekennzeichnete Dummy-Kosten.
 
 **Live:** https://jgudel-ctrl.github.io/digitaler-werkzeugschrank/
 
