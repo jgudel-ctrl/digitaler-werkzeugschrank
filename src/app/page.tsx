@@ -6,13 +6,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Archive, ArrowRight, BarChart3, CalendarDays, Check, ChevronDown, CircleAlert, CircleCheck,
   Clock3, Eye, Gauge, History, Home, Info, KeyRound, LogOut, Mail,
-  MapPin, Menu, PackageCheck, QrCode, ScanLine, Search, ShieldCheck,
+  MapPin, Menu, PackageCheck, QrCode, Search, ShieldCheck,
   Sparkles, ToolCase, TrendingDown, TrendingUp, UserRound, WalletCards, Wrench, X, XCircle,
 } from "lucide-react";
 import {
   Area, AreaChart, Bar, CartesianGrid, Cell, ComposedChart, Legend, Line,
   Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
+import { QrScannerView } from "@/components/qr-scanner-view";
 import styles from "./werkzeugschrank.module.css";
 import {
   AnalysisPeriod, filterServiceHistory, periodLabels, serviceHistory, summarizeServiceHistory,
@@ -23,7 +24,9 @@ import {
 } from "./tools";
 
 type View = "overview" | "tools" | "analysis" | "archive" | "profile";
-type ScanState = "idle" | "scanning" | "success" | "error";
+type ScanState = "idle" | "success" | "error";
+
+const DEMO_QR_TOOL_ID = "GW-SB-000184";
 
 const statusIcon = (status: Tool["status"]) =>
   status === "Beim Kunden" ? <CircleCheck size={15} /> : status === "Beim Schärfen" ? <Clock3 size={15} /> : <Archive size={15} />;
@@ -136,27 +139,23 @@ function DetailSheet({ tool, onClose }: { tool: Tool | null; onClose: () => void
 
 function Scanner({ open, onClose, onOpen }: { open: boolean; onClose: () => void; onOpen: (tool: Tool) => void }) {
   const [scanState, setScanState] = useState<ScanState>("idle");
-  const [selected, setSelected] = useState("GW-SB-000184");
   const close = () => { setScanState("idle"); onClose(); };
-  const scan = () => {
-    setScanState("scanning");
-    window.setTimeout(() => {
-      const found = tools.find((tool) => tool.id === selected);
-      if (!found) return setScanState("error");
-      setScanState("success");
-      window.setTimeout(() => { close(); onOpen(found); }, 850);
-    }, 1150);
+  const scan = (rawCode: string) => {
+    const code = rawCode.trim();
+    const found = code === DEMO_QR_TOOL_ID ? tools.find((tool) => tool.id === code) : undefined;
+    if (!found) return setScanState("error");
+    setScanState("success");
+    window.setTimeout(() => { close(); onOpen(found); }, 850);
   };
   return <AnimatePresence>{open && <motion.div className={styles.scannerOverlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
     <motion.section role="dialog" aria-modal="true" aria-label="QR-Code Scanner" className={styles.scanner} initial={{ scale: .96 }} animate={{ scale: 1 }} exit={{ scale: .96 }}>
       <header><div><span className={styles.scannerIcon}><QrCode /></span><div><h2>Werkzeug scannen</h2><p>QR-Code am Werkzeug scannen</p></div></div><button onClick={close} aria-label="Scanner schließen"><X /></button></header>
       <div className={`${styles.scanViewport} ${scanState === "success" ? styles.scanSuccess : scanState === "error" ? styles.scanError : ""}`}>
         <div className={styles.scanCorners}><i /><i /><i /><i /></div>
-        {scanState === "success" ? <div className={styles.scanMessage}><span><Check /></span><strong>Werkzeug erkannt</strong><small>{selected === "GW-SB-000099" ? "Lebensdauer erreicht · Werkzeugpass wird geöffnet" : "Werkzeugpass wird geöffnet"}</small></div> : scanState === "error" ? <div className={styles.scanMessage}><span><XCircle /></span><strong>Werkzeug nicht gefunden</strong><small>Code prüfen oder erneut scannen</small></div> : <><QrCode size={76} strokeWidth={1.3} /><span className={styles.scanLine} /><p>{scanState === "scanning" ? "Werkzeug-ID wird gelesen …" : "Code innerhalb des Rahmens positionieren"}</p></>}
+        {scanState === "success" ? <div className={styles.scanMessage}><span><Check /></span><strong>Werkzeug erkannt</strong><code>{DEMO_QR_TOOL_ID}</code><small>Werkzeugpass wird geöffnet</small></div> : scanState === "error" ? <div className={styles.scanMessage}><span><XCircle /></span><strong>Dieser Demo-QR-Code ist nicht gültig</strong><small>Bitte den QR-Code für {DEMO_QR_TOOL_ID} verwenden</small></div> : <><div className={styles.cameraFrame}><QrScannerView onScan={scan} /></div><span className={styles.scanLine} /><p>QR-Code innerhalb des Rahmens positionieren</p></>}
       </div>
       <div className={styles.scannerControls}>
-        <label><span>Demo-Werkzeug-ID</span><select value={selected} onChange={(event) => { setSelected(event.target.value); setScanState("idle"); }}><option value="GW-SB-000184">GW-SB-000184 · Sägeblatt</option><option value="GW-DP-000203">GW-DP-000203 · kritisch</option><option value="GW-FR-000301">GW-FR-000301 · Fräser</option><option value="GW-SB-000099">GW-SB-000099 · archiviert</option><option value="UNBEKANNT-4711">Unbekannter QR-Code</option></select></label>
-        <button className={styles.scanButton} onClick={scan} disabled={scanState === "scanning" || scanState === "success"}><ScanLine /> {scanState === "scanning" ? "Scan läuft …" : "Dummy QR-Code scannen"}</button>
+        <p><QrCode size={18} /> Demo-Werkzeug <strong>{DEMO_QR_TOOL_ID}</strong></p>
         {scanState === "error" && <button className={styles.retryButton} onClick={() => setScanState("idle")}>Erneut versuchen</button>}
       </div>
     </motion.section>
