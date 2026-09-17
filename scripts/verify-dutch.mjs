@@ -16,13 +16,17 @@ const required = [
   ["src/app/layout.tsx", '<html lang="nl">'],
   ["src/app/page.tsx", 'new Intl.NumberFormat("nl-NL"'],
   ["src/app/page.tsx", "Digitale gereedschapskast"],
-  ["src/app/page.tsx", "Welkom terug"],
   ["src/app/page.tsx", "Mijn gereedschappen"],
   ["src/app/page.tsx", "Slijphistorie"],
   ["src/components/qr-scanner-view.tsx", "Camera wordt gestart"],
 ];
 
 const forbidden = [
+  "function Login(",
+  "loggedIn",
+  "Welkom terug",
+  "Inloggen",
+  "Uitloggen",
   "Digitaler Werkzeugschrank",
   "Willkommen zurück",
   "Meine Werkzeuge",

@@ -1,11 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Archive, ArrowRight, BarChart3, CalendarDays, Check, ChevronDown, CircleAlert, CircleCheck,
-  Clock3, Eye, Gauge, History, Home, Info, KeyRound, LogOut, Mail,
+  Clock3, Eye, Gauge, History, Home, Info,
   MapPin, Menu, PackageCheck, QrCode, Search, ShieldCheck,
   Sparkles, ToolCase, TrendingDown, TrendingUp, UserRound, WalletCards, Wrench, X, XCircle,
 } from "lucide-react";
@@ -40,45 +40,6 @@ const reserve = (tool: Tool) => {
   return { label: "Goede reserve", tone: "good", icon: <CircleCheck size={15} /> };
 };
 
-function Login({ onLogin }: { onLogin: () => void }) {
-  const [busy, setBusy] = useState(false);
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    setBusy(true);
-    window.setTimeout(onLogin, 650);
-  };
-  return (
-    <main className={styles.loginPage}>
-      <div className={styles.loginHalo} aria-hidden="true" />
-      <section className={styles.loginCard} aria-labelledby="login-title">
-        <div className={styles.loginBrand}>
-          <div className={styles.logoPlate}><Image src="/digitaler-werkzeugschrank/logo.svg" alt="TMS" width={92} height={92} priority /></div>
-          <div>
-            <p>Gudel Werkzeuge</p>
-            <h1 id="login-title">Digitale<br />gereedschapskast</h1>
-          </div>
-          <div className={styles.loginPreview} aria-hidden="true">
-            <span><QrCode size={23} /></span>
-            <div><strong>10</strong><small>gereedschapspaspoorten</small></div>
-            <div className={styles.previewBars}><i /><i /><i /></div>
-          </div>
-        </div>
-        <form className={styles.loginForm} onSubmit={submit}>
-          <div className={styles.loginIntro}>
-            <h2>Welkom terug</h2>
-            <p>Uw gereedschapsvoorraad. Altijd binnen handbereik.</p>
-          </div>
-          <label><span>E-Mail</span><div className={styles.inputWrap}><Mail size={18} /><input type="email" defaultValue="kunde@gudel-werkzeuge.de" required /></div></label>
-          <label><span>Wachtwoord</span><div className={styles.inputWrap}><KeyRound size={18} /><input type="password" defaultValue="werkzeugschrank" required /></div></label>
-          <button className={styles.primaryButton} type="submit" disabled={busy}>
-            {busy ? <><span className={styles.spinner} /> Gereedschapskast wordt geopend</> : <>Inloggen <ArrowRight size={18} /></>}
-          </button>
-          <p className={styles.demoHint}><ShieldCheck size={16} /> Beveiligde demotoegang · Geen echte gegevens</p>
-        </form>
-      </section>
-    </main>
-  );
-}
 
 function ToolCard({ tool, onOpen }: { tool: Tool; onOpen: (tool: Tool) => void }) {
   const life = remainingPercent(tool);
@@ -272,17 +233,16 @@ function ArchiveView({ onOpen }: { onOpen: (tool: Tool) => void }) {
   return <section className={styles.pageSection}><div className={styles.pageTitle}><div><h1>Gearchiveerde gereedschappen</h1><p>{archivedTools.length} gereedschap waarvan de levensduur is bereikt</p></div><span className={styles.archiveTitle}><Archive /></span></div><div className={styles.archiveNotice}><Info /><div><strong>Historie blijft behouden</strong><p>Gearchiveerde gereedschappen behoren niet meer tot de actieve voorraad, maar hun volledige gereedschapspaspoort blijft beschikbaar.</p></div></div><div className={styles.toolGrid}>{archivedTools.map((tool) => <ToolCard key={tool.id} tool={tool} onOpen={onOpen} />)}</div></section>;
 }
 
-function ProfileView({ onLogout }: { onLogout: () => void }) {
-  return <section className={styles.pageSection}><div className={styles.pageTitle}><div><h1>Profiel</h1><p>Klanttoegang en portaalinformatie</p></div><span><UserRound /></span></div><div className={styles.profilePanel}><div className={styles.avatar}>HM</div><div><h2>Holzwerk Muster GmbH</h2><p>kunde@gudel-werkzeuge.de</p><span><ShieldCheck /> Demo-klanttoegang</span></div></div><div className={styles.profileFacts}><div><MapPin /><span><small>Klantlocatie</small><b>Bochum, Duitsland</b></span></div><div><ToolCase /><span><small>Gereedschapsvoorraad</small><b>10 digitale gereedschapspaspoorten</b></span></div></div><button className={styles.logoutButton} onClick={onLogout}><LogOut /> Uitloggen</button></section>;
+function ProfileView() {
+  return <section className={styles.pageSection}><div className={styles.pageTitle}><div><h1>Profiel</h1><p>Klanttoegang en portaalinformatie</p></div><span><UserRound /></span></div><div className={styles.profilePanel}><div className={styles.avatar}>HM</div><div><h2>Holzwerk Muster GmbH</h2><p>kunde@gudel-werkzeuge.de</p><span><ShieldCheck /> Demo-klanttoegang</span></div></div><div className={styles.profileFacts}><div><MapPin /><span><small>Klantlocatie</small><b>Bochum, Duitsland</b></span></div><div><ToolCase /><span><small>Gereedschapsvoorraad</small><b>10 digitale gereedschapspaspoorten</b></span></div></div></section>;
 }
 
 export default function WerkzeugschrankPage() {
-  const [loggedIn, setLoggedIn] = useState(false);
   const [view, setView] = useState<View>("overview");
   const [detail, setDetail] = useState<Tool | null>(null);
   const [scanner, setScanner] = useState(false);
   const navigate = (next: View) => { setView(next); window.scrollTo({ top: 0, behavior: "smooth" }); };
-  if (!loggedIn) return <Login onLogin={() => setLoggedIn(true)} />;
+
   const nav = [
     { id: "overview" as View, label: "Overzicht", icon: <Home /> },
     { id: "tools" as View, label: "Gereedschappen", icon: <ToolCase /> },
@@ -293,8 +253,8 @@ export default function WerkzeugschrankPage() {
   const mobileNav = nav.filter((item) => item.id !== "profile");
   return <div className={styles.appShell}>
     <header className={styles.topbar}><button className={styles.brand} onClick={() => navigate("overview")}><span><Image src="/digitaler-werkzeugschrank/logo.svg" alt="TMS" width={44} height={44} /></span><div><strong>Digitale gereedschapskast</strong><small>Gudel Werkzeuge</small></div></button><div className={styles.topActions}><button aria-label="Menu"><Menu /></button><button className={styles.account} onClick={() => navigate("profile")}><span>HM</span><div><strong>Holzwerk Muster</strong><small>Klantenportaal</small></div></button></div></header>
-    <aside className={styles.sidebar}><div className={styles.sideLogo}><Image src="/digitaler-werkzeugschrank/logo.svg" alt="TMS" width={50} height={50} /></div><nav>{nav.map((item) => <button key={item.id} className={view === item.id ? styles.activeNav : ""} onClick={() => navigate(item.id)}>{item.icon}<span>{item.label}</span></button>)}</nav><button className={styles.sideScan} onClick={() => setScanner(true)}><QrCode /><span>Scannen</span></button><button className={styles.sideLogout} onClick={() => setLoggedIn(false)}><LogOut /></button></aside>
-    <main className={styles.main}>{view === "overview" && <Dashboard onNavigate={navigate} onOpen={setDetail} />}{view === "tools" && <ToolList onOpen={setDetail} />}{view === "analysis" && <AnalysisView />}{view === "archive" && <ArchiveView onOpen={setDetail} />}{view === "profile" && <ProfileView onLogout={() => setLoggedIn(false)} />}</main>
+    <aside className={styles.sidebar}><div className={styles.sideLogo}><Image src="/digitaler-werkzeugschrank/logo.svg" alt="TMS" width={50} height={50} /></div><nav>{nav.map((item) => <button key={item.id} className={view === item.id ? styles.activeNav : ""} onClick={() => navigate(item.id)}>{item.icon}<span>{item.label}</span></button>)}</nav><button className={styles.sideScan} onClick={() => setScanner(true)}><QrCode /><span>Scannen</span></button></aside>
+    <main className={styles.main}>{view === "overview" && <Dashboard onNavigate={navigate} onOpen={setDetail} />}{view === "tools" && <ToolList onOpen={setDetail} />}{view === "analysis" && <AnalysisView />}{view === "archive" && <ArchiveView onOpen={setDetail} />}{view === "profile" && <ProfileView />}</main>
     <nav className={styles.bottomNav}>{mobileNav.slice(0, 2).map((item) => <button key={item.id} className={view === item.id ? styles.activeNav : ""} onClick={() => navigate(item.id)}>{item.icon}<span>{item.label}</span></button>)}<button className={styles.centerScan} onClick={() => setScanner(true)}><span><QrCode /></span><b>Scannen</b></button>{mobileNav.slice(2).map((item) => <button key={item.id} className={view === item.id ? styles.activeNav : ""} onClick={() => navigate(item.id)}>{item.icon}<span>{item.label}</span></button>)}</nav>
     <DetailSheet tool={detail} onClose={() => setDetail(null)} />
     <Scanner open={scanner} onClose={() => setScanner(false)} onOpen={setDetail} />
