@@ -261,7 +261,7 @@ export default function WerkzeugschrankPage() {
   const nav = [
     { id: "overview" as View, label: "Overview", icon: <Home /> },
     { id: "tools" as View, label: "Tools", icon: <ToolCase /> },
-    { id: "analysis" as View, label: "Analyse", icon: <BarChart3 /> },
+    { id: "analysis" as View, label: "Analysis", icon: <BarChart3 /> },
     { id: "archive" as View, label: "Archive", icon: <Archive /> },
     { id: "profile" as View, label: "Profile", icon: <UserRound /> },
   ];

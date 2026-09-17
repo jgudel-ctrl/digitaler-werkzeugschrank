@@ -32,6 +32,7 @@ const checks = [
   ["src/app/(en)/en/layout.tsx", '<html lang="en">'],
   ["src/app/(de)/de/page.tsx", "Digitaler Werkzeugschrank"],
   ["src/app/(en)/en/page.tsx", "Digital Tool Cabinet"],
+  ["src/app/(en)/en/page.tsx", 'label: "Analysis"'],
   ["src/app/(de)/de/page.tsx", "Demo-Scan simulieren"],
   ["src/app/(en)/en/page.tsx", "Simulate demo scan"],
   ["src/app/(en)/en/page.tsx", "12/08/2026"],
@@ -50,6 +51,18 @@ const combined = Object.values(source).join("\n");
 for (const forbidden of ["function Login(", "loggedIn", "Inloggen", "Uitloggen", "Welkom terug", "Digitale gereedschapskast"]) {
   if (combined.includes(forbidden)) errors.push(`Forbidden login/Dutch text remains: ${forbidden}`);
 }
+
+const englishSource = [
+  source["src/app/(en)/en/page.tsx"] ?? "",
+  source["src/app/(en)/en/tools.ts"] ?? "",
+  source["src/app/(en)/en/analysis.ts"] ?? "",
+].join("\n");
+for (const forbidden of ['label: "Analyse"', '.replace(".", ",")']) {
+  if (englishSource.includes(forbidden)) errors.push(`German formatting/text remains in English route: ${forbidden}`);
+}
+const englishTools = source["src/app/(en)/en/tools.ts"] ?? "";
+if (/\d,\d/.test(englishTools)) errors.push("Decimal comma remains in English tool data");
+if (/\d{2}\.\d{2}\.\d{4}/.test(englishTools)) errors.push("German-style date remains in English tool data");
 
 if (!source["src/components/qr-scanner-view.tsx"]?.includes("}, [restartKey]);")) {
   errors.push("Scanner initialization is not isolated from onScan identity changes");
