@@ -27,7 +27,7 @@ const overlayStyle = {
 export function QrScannerView({ onScan, paused = false }: QrScannerViewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const scannerRef = useRef<QrScanner | null>(null);
-  const [status, setStatus] = useState<"lädt" | "aktiv" | "fehler">("lädt");
+  const [status, setStatus] = useState<"laden" | "actief" | "fout">("laden");
   const lastScanRef = useRef<{ code: string; at: number } | null>(null);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export function QrScannerView({ onScan, paused = false }: QrScannerViewProps) {
       { highlightScanRegion: true, highlightCodeOutline: true, maxScansPerSecond: 5 },
     );
     scannerRef.current = scanner;
-    scanner.start().then(() => setStatus("aktiv")).catch(() => setStatus("fehler"));
+    scanner.start().then(() => setStatus("actief")).catch(() => setStatus("fout"));
 
     return () => {
       scanner.stop();
@@ -58,14 +58,14 @@ export function QrScannerView({ onScan, paused = false }: QrScannerViewProps) {
   useEffect(() => {
     if (!scannerRef.current) return;
     if (paused) scannerRef.current.pause();
-    else if (status === "aktiv") scannerRef.current.start().catch(() => undefined);
+    else if (status === "actief") scannerRef.current.start().catch(() => undefined);
   }, [paused, status]);
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden", background: "#000" }}>
       <video ref={videoRef} style={{ width: "100%", height: "100%", objectFit: "cover" }} muted playsInline />
-      {status === "lädt" && <div style={overlayStyle}><Loader2 /><span>Kamera wird gestartet …</span></div>}
-      {status === "fehler" && <div style={overlayStyle}><CameraOff /><span>Kamera nicht verfügbar. Bitte den Kamerazugriff erlauben.</span></div>}
+      {status === "laden" && <div style={overlayStyle}><Loader2 /><span>Camera wordt gestart …</span></div>}
+      {status === "fout" && <div style={overlayStyle}><CameraOff /><span>Camera niet beschikbaar. Geef toestemming voor cameratoegang.</span></div>}
     </div>
   );
 }
