@@ -11,6 +11,10 @@ const requiredFiles = [
   "src/app/(en)/en/page.tsx",
   "src/app/(en)/en/tools.ts",
   "src/app/(en)/en/analysis.ts",
+  "src/app/(nl)/nl/layout.tsx",
+  "src/app/(nl)/nl/page.tsx",
+  "src/app/(nl)/nl/tools.ts",
+  "src/app/(nl)/nl/analysis.ts",
   "src/app/(root)/layout.tsx",
   "src/app/(root)/page.tsx",
   "src/components/qr-scanner-view.tsx",
@@ -30,15 +34,19 @@ for (const file of requiredFiles) {
 const checks = [
   ["src/app/(de)/de/layout.tsx", '<html lang="de">'],
   ["src/app/(en)/en/layout.tsx", '<html lang="en">'],
+  ["src/app/(nl)/nl/layout.tsx", '<html lang="nl">'],
   ["src/app/(de)/de/page.tsx", "Digitaler Werkzeugschrank"],
   ["src/app/(en)/en/page.tsx", "Digital Tool Cabinet"],
+  ["src/app/(nl)/nl/page.tsx", "Digitale gereedschapskast"],
   ["src/app/(en)/en/page.tsx", 'label: "Analysis"'],
   ["src/app/(de)/de/page.tsx", "Demo-Scan simulieren"],
   ["src/app/(en)/en/page.tsx", "Simulate demo scan"],
+  ["src/app/(nl)/nl/page.tsx", "Demo-scan simuleren"],
   ["src/app/(en)/en/page.tsx", "12/08/2026"],
   ["src/app/(en)/en/tools.ts", "303.00 mm"],
   ["src/app/(de)/de/page.tsx", "scan(DEMO_QR_TOOL_ID)"],
   ["src/app/(en)/en/page.tsx", "scan(DEMO_QR_TOOL_ID)"],
+  ["src/app/(nl)/nl/page.tsx", "scan(DEMO_QR_TOOL_ID)"],
   ["src/components/qr-scanner-view.tsx", "onScanRef"],
   ["src/components/qr-scanner-view.tsx", "cameraStarting"],
   ["src/components/qr-scanner-view.tsx", "else if (wasPaused)"],
@@ -48,8 +56,8 @@ for (const [file, needle] of checks) {
 }
 
 const combined = Object.values(source).join("\n");
-for (const forbidden of ["function Login(", "loggedIn", "Inloggen", "Uitloggen", "Welkom terug", "Digitale gereedschapskast"]) {
-  if (combined.includes(forbidden)) errors.push(`Forbidden login/Dutch text remains: ${forbidden}`);
+for (const forbidden of ["function Login(", "loggedIn", "Inloggen", "Uitloggen", "Welkom terug"]) {
+  if (combined.includes(forbidden)) errors.push(`Forbidden login text/code remains: ${forbidden}`);
 }
 
 const englishSource = [
@@ -72,4 +80,4 @@ if (errors.length) {
   console.error(errors.join("\n"));
   process.exit(1);
 }
-console.log("German/English routes and scanner checks passed.");
+console.log("German, English and Dutch routes plus scanner checks passed.");
